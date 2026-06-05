@@ -1,120 +1,535 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import InputField from '../../components/ui/InputField';
 
-function VerifyEmailPrompt({ email }) {
-  return (
-    <div className="auth-page">
-      <div className="auth-bg" />
-      <div className="auth-card" style={{ textAlign: 'center' }}>
-        <div className="auth-logo">⚡ DevQueue</div>
-        <div style={{ fontSize: '3rem', marginBottom: 20 }}>✉️</div>
-        <h1>Verify Your Email</h1>
-        <p className="auth-sub" style={{ marginBottom: 24 }}>
-          We've sent a verification link to <strong style={{ color: 'var(--txt)' }}>{email}</strong>.
-        </p>
-        <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', borderRadius: 12, padding: 16, marginBottom: 28, fontSize: '0.85rem', color: 'var(--txt-2)', textAlign: 'left', lineHeight: 1.6 }}>
-          💡 <strong>Local Testing:</strong> Since you're running locally, we also printed the direct verification link in your <strong>backend terminal</strong>. You can click it there to verify instantly.
-        </div>
-        <Link to="/login" className="btn btn-primary btn-full">
-          Proceed to Login
-        </Link>
-      </div>
-    </div>
-  );
+function getStrength(password) {
+  let score = 0;
+  if (!password) return 0;
+  if (password.length >= 8) score++;
+  if (/[A-Z]/.test(password)) score++;
+  if (/[0-9]/.test(password)) score++;
+  if (/[^A-Za-z0-9]/.test(password)) score++;
+  return score;
 }
+
+const validatePhone = (phone) => {
+  const cleaned = phone.replace(/[^0-9]/g, '');
+  return cleaned.length >= 10;
+};
 
 export default function RegisterPage() {
   const [form, setForm] = useState({ name: '', email: '', password: '', phone: '' });
-  const [error, setError] = useState('');
+  const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
-  const [step, setStep] = useState(1); // 1: form, 2: verify prompt
-  const { register } = useAuth();
+  const [phase, setPhase] = useState(1); // 1: Info, 2: Pass, 3: Contact/OTP
+  const [otpSent, setOtpSent] = useState(false);
+  const [attemptsLeft, setAttemptsLeft] = useState(3);
+  
+  const { register, setUser, toast } = useAuth();
+  const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
+  // Validate and advance step
+  const handleNextPhase = () => {
+    if (phase === 1) {
+      if (!form.name || !form.email) {
+        toast.error("Please fill in your name and email address.");
+        return;
+      }
+      setPhase(2);
+    } else if (phase === 2) {
+      const strength = getStrength(form.password);
+      if (strength < 3) {
+        toast.error("Password is too weak. Ensure it has at least 8 characters, an uppercase letter, and a number.");
+        return;
+      }
+      setPhase(3);
+    }
+  };
+
+  const handlePrevPhase = () => {
+    setPhase(prev => Math.max(1, prev - 1));
+  };
+
+  // Submit registration & send OTP (Step 3)
+  const handleSendOtp = async (e) => {
     e.preventDefault();
-    setError('');
+    if (!validatePhone(form.phone)) {
+      toast.error("Please enter a valid 10 mobile number.");
+      return;
+    }
+
     setLoading(true);
     try {
-      await register(form);
-      setStep(2);
+      await register({
+        name: form.name,
+        email: form.email,
+        password: form.password,
+        phone: form.phone
+      });
+      toast.success("Account registered! A 6-digit OTP has been sent to your email.");
+      setOtpSent(true);
+      setAttemptsLeft(3);
     } catch (err) {
-      setError(err.message || 'Something went wrong. Please try again.');
+      toast.error(err.message || "Registration failed. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  if (step === 2) {
-    return <VerifyEmailPrompt email={form.email} />;
-  }
+  // Verify OTP & Enter Dashboard directly
+  const handleVerifyOtp = async (e) => {
+    e.preventDefault();
+    if (!otp || otp.length !== 6) {
+      toast.error("Please enter a valid 6-digit OTP code.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await fetch('/api/auth/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: form.email, otp })
+      });
+      const data = await res.json();
+      
+      if (!data.success) {
+        throw new Error(data.message || "OTP Verification failed");
+      }
+
+      toast.success("Verification successful! Welcome to your dashboard.");
+      setUser(prev => ({ ...prev, isEmailVerified: true }));
+      navigate('/dashboard');
+    } catch (err) {
+      const remaining = attemptsLeft - 1;
+      setAttemptsLeft(remaining);
+      
+      if (remaining <= 0) {
+        toast.error("Verification failed. 3 incorrect attempts. Please register again.");
+        // Reset state
+        setUser(null);
+        setForm({ name: '', email: '', password: '', phone: '' });
+        setOtp('');
+        setOtpSent(false);
+        setPhase(1);
+      } else {
+        toast.error(`Invalid OTP code. ${remaining} attempt${remaining > 1 ? 's' : ''} remaining.`);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const isPhoneValid = validatePhone(form.phone);
 
   return (
-    <div className="auth-page">
-      <div className="auth-bg" />
-      <div className="auth-card">
-        <div className="auth-logo">
-          <span>⚡</span> DevQueue
-        </div>
-        <h1>Create Account</h1>
-        <p className="auth-sub">Join the dev queue. Track your project live.</p>
+    <div style={{
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: '#ffffff',
+      position: 'relative',
+      overflow: 'hidden',
+      padding: '24px',
+    }}>
+      {/* Curved wave background */}
+      <div style={{
+        position: 'absolute',
+        top: 0, left: 0, right: 0,
+        height: '46vh',
+        background: '#f5a623',
+        borderBottomRightRadius: '100% 25%',
+        borderBottomLeftRadius: '20% 5%',
+        zIndex: 1,
+      }} />
 
-        {error && (
-          <div className="error-banner">
-            <span>⚠️</span> {error}
+      {/* Auth Card Container */}
+      <div style={{
+        position: 'relative',
+        zIndex: 10,
+        width: '100%',
+        maxWidth: 420,
+        background: '#ffffff',
+        borderRadius: 24,
+        boxShadow: '0 20px 40px rgba(0,0,0,0.06), 0 0 1px rgba(0,0,0,0.1)',
+        padding: '36px 32px 48px',
+        textAlign: 'center',
+        boxSizing: 'border-box',
+      }}>
+        {/* Top smartphone & profile illustration */}
+        <svg viewBox="0 0 200 130" style={{ width: 140, height: 90, margin: '0 auto 16px', display: 'block' }}>
+          {/* Base dotted line */}
+          <line x1="30" y1="95" x2="170" y2="95" stroke="#e2e8f0" strokeWidth="2" strokeDasharray="3,3" />
+          {/* Smartphone Bezel */}
+          <rect x="90" y="20" width="45" height="80" rx="6" fill="none" stroke="#f5a623" strokeWidth="2.5" />
+          <line x1="108" y1="24" x2="117" y2="24" stroke="#f5a623" strokeWidth="2" strokeLinecap="round" />
+          {/* User Profile Card */}
+          <rect x="62" y="32" width="44" height="52" rx="4" fill="#ffffff" stroke="#cbd5e1" strokeWidth="1" />
+          <circle cx="84" cy="50" r="10" fill="#fef3c7" />
+          {/* User Silhouette */}
+          <path d="M76,64 C76,59 80,59 84,59 C88,59 92,59 92,64 L92,68 L76,68 Z" fill="#1e293b" />
+          <circle cx="84" cy="47" r="4.5" fill="#1e293b" />
+          {/* Accents */}
+          <circle cx="68" cy="74" r="2" fill="#f5a623" />
+          <circle cx="74" cy="74" r="2" fill="#cbd5e1" />
+          <line x1="102" y1="70" x2="122" y2="70" stroke="#fde68a" strokeWidth="2" strokeLinecap="round" />
+        </svg>
+
+        {/* Phase Header Titles */}
+        <h1 style={{
+          fontFamily: 'var(--fd)',
+          fontSize: '1.6rem',
+          fontWeight: 700,
+          color: '#1e293b',
+          marginBottom: 4,
+          marginTop: 0,
+        }}>
+          {otpSent ? 'Verification' : 'Register'}
+        </h1>
+        <p style={{ fontSize: '0.78rem', color: '#94a3b8', fontWeight: 600, marginBottom: 28, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+          {phase === 1 && 'Step 1 of 3: General Info'}
+          {phase === 2 && 'Step 2 of 3: Set Password'}
+          {phase === 3 && !otpSent && 'Step 3 of 3: Mobile Verification'}
+          {phase === 3 && otpSent && `Verify OTP (${attemptsLeft} chances left)`}
+        </p>
+
+        {/* PHASE 1: Info */}
+        {phase === 1 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+            <div style={{ marginBottom: 24, textAlign: 'left' }}>
+              <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Full Name</label>
+              <input
+                type="text"
+                placeholder="Full Name"
+                value={form.name}
+                onChange={e => setForm({ ...form, name: e.target.value })}
+                required
+                style={{
+                  width: '100%',
+                  border: 'none',
+                  borderBottom: '1px solid #e2e8f0',
+                  padding: '8px 0',
+                  background: 'transparent',
+                  color: '#1e293b',
+                  fontSize: '0.9rem',
+                  outline: 'none',
+                  marginTop: 4,
+                  boxSizing: 'border-box',
+                }}
+                onFocus={e => e.target.style.borderBottomColor = '#f5a623'}
+                onBlur={e => e.target.style.borderBottomColor = '#e2e8f0'}
+              />
+            </div>
+
+            <div style={{ marginBottom: 32, textAlign: 'left' }}>
+              <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Your Email</label>
+              <input
+                type="email"
+                placeholder="Your Email"
+                value={form.email}
+                onChange={e => setForm({ ...form, email: e.target.value })}
+                required
+                style={{
+                  width: '100%',
+                  border: 'none',
+                  borderBottom: '1px solid #e2e8f0',
+                  padding: '8px 0',
+                  background: 'transparent',
+                  color: '#1e293b',
+                  fontSize: '0.9rem',
+                  outline: 'none',
+                  marginTop: 4,
+                  boxSizing: 'border-box',
+                }}
+                onFocus={e => e.target.style.borderBottomColor = '#f5a623'}
+                onBlur={e => e.target.style.borderBottomColor = '#e2e8f0'}
+              />
+            </div>
+
+            <button
+              type="button"
+              onClick={handleNextPhase}
+              style={{
+                width: '100%',
+                padding: '12px 0',
+                borderRadius: 99,
+                background: '#f5a623',
+                color: '#ffffff',
+                border: 'none',
+                fontSize: '0.92rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                boxShadow: '0 4px 14px rgba(245,166,35,0.3)',
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = '#e0951b'}
+              onMouseLeave={e => e.currentTarget.style.background = '#f5a623'}
+            >
+              Next Step →
+            </button>
           </div>
         )}
 
-        <form onSubmit={handleSubmit}>
-          <InputField
-            label="Full Name"
-            name="name"
-            placeholder="Moksh Shah"
-            value={form.name}
-            onChange={e => setForm({ ...form, name: e.target.value })}
-            required
-          />
-          
-          <InputField
-            label="Email Address"
-            name="email"
-            type="email"
-            placeholder="you@example.com"
-            value={form.email}
-            onChange={e => setForm({ ...form, email: e.target.value })}
-            required
-          />
-          
-          <InputField
-            label="Password"
-            name="password"
-            type="password"
-            placeholder="Min 8 characters, 1 upper, 1 number"
-            value={form.password}
-            onChange={e => setForm({ ...form, password: e.target.value })}
-            showStrength
-            required
-          />
-          
-          <InputField
-            label="Phone (optional, for WhatsApp updates)"
-            name="phone"
-            type="tel"
-            placeholder="+91 98765 43210"
-            value={form.phone}
-            onChange={e => setForm({ ...form, phone: e.target.value })}
-          />
+        {/* PHASE 2: Password */}
+        {phase === 2 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+            <div style={{ marginBottom: 12, textAlign: 'left' }}>
+              <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Choose Password</label>
+              <input
+                type="password"
+                placeholder="Min 8 characters, 1 upper, 1 number"
+                value={form.password}
+                onChange={e => setForm({ ...form, password: e.target.value })}
+                required
+                style={{
+                  width: '100%',
+                  border: 'none',
+                  borderBottom: '1px solid #e2e8f0',
+                  padding: '8px 0',
+                  background: 'transparent',
+                  color: '#1e293b',
+                  fontSize: '0.9rem',
+                  outline: 'none',
+                  marginTop: 4,
+                  boxSizing: 'border-box',
+                }}
+                onFocus={e => e.target.style.borderBottomColor = '#f5a623'}
+                onBlur={e => e.target.style.borderBottomColor = '#e2e8f0'}
+              />
+            </div>
 
-          <button type="submit" className="btn btn-primary btn-full" style={{ marginTop: 8 }} disabled={loading}>
-            {loading ? <div className="spinner" /> : 'Create Account →'}
-          </button>
-        </form>
+            {/* Password strength indicators */}
+            {form.password && (
+              <div style={{ display: 'flex', gap: 4, marginTop: 4, marginBottom: 28 }}>
+                {[1, 2, 3, 4].map(i => {
+                  const strength = getStrength(form.password);
+                  const isActive = strength >= i;
+                  const color = strength === 1 ? '#ef4444' : strength === 2 ? '#f59e0b' : strength === 3 ? '#3b82f6' : '#10b981';
+                  return (
+                    <div
+                      key={i}
+                      style={{
+                        flex: 1,
+                        height: 3,
+                        borderRadius: 2,
+                        background: isActive ? color : '#e2e8f0',
+                        transition: 'background 0.3s',
+                      }}
+                    />
+                  );
+                })}
+              </div>
+            )}
 
-        <p className="auth-switch">
-          Already have an account? <Link to="/login">Sign in</Link>
-        </p>
+            <div style={{ display: 'flex', gap: 12, marginTop: 12 }}>
+              <button
+                type="button"
+                onClick={handlePrevPhase}
+                style={{
+                  flex: 1,
+                  padding: '11px 0',
+                  borderRadius: 99,
+                  background: 'transparent',
+                  color: '#64748b',
+                  border: '1px solid #cbd5e1',
+                  fontSize: '0.88rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                ← Back
+              </button>
+              <button
+                type="button"
+                onClick={handleNextPhase}
+                style={{
+                  flex: 1.5,
+                  padding: '11px 0',
+                  borderRadius: 99,
+                  background: '#f5a623',
+                  color: '#ffffff',
+                  border: 'none',
+                  fontSize: '0.88rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 14px rgba(245,166,35,0.2)',
+                }}
+              >
+                Next →
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* PHASE 3: Details & Inline OTP */}
+        {phase === 3 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+            {/* Phone Number Field */}
+            <div style={{ marginBottom: 24, textAlign: 'left' }}>
+              <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Phone Number</label>
+              <input
+                type="tel"
+                placeholder="+91 98765 43210"
+                value={form.phone}
+                onChange={e => setForm({ ...form, phone: e.target.value })}
+                disabled={otpSent}
+                style={{
+                  width: '100%',
+                  border: 'none',
+                  borderBottom: '1px solid #e2e8f0',
+                  padding: '8px 0',
+                  background: 'transparent',
+                  color: otpSent ? '#94a3b8' : '#1e293b',
+                  fontSize: '0.9rem',
+                  outline: 'none',
+                  marginTop: 4,
+                  boxSizing: 'border-box',
+                }}
+                onFocus={e => e.target.style.borderBottomColor = '#f5a623'}
+                onBlur={e => e.target.style.borderBottomColor = '#e2e8f0'}
+              />
+              {!otpSent && (
+                <div style={{ fontSize: '0.72rem', color: isPhoneValid ? '#10b981' : '#94a3b8', marginTop: 6, textAlign: 'right' }}>
+                  {isPhoneValid ? '✓ Mobile number is valid' : 'Enter a 10 digit mobile number'}
+                </div>
+              )}
+            </div>
+
+            {/* Inline OTP Input Field (Revealed once registration submits and sends OTP) */}
+            {otpSent && (
+              <form onSubmit={handleVerifyOtp} style={{ display: 'flex', flexDirection: 'column', gap: 0, animation: 'fade-in 0.3s ease' }}>
+                <div style={{ marginBottom: 20, textAlign: 'left' }}>
+                  <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>6-Digit OTP Code</label>
+                  <input
+                    type="text"
+                    placeholder="000000"
+                    maxLength={6}
+                    value={otp}
+                    onChange={e => setOtp(e.target.value.replace(/\D/g, ''))}
+                    required
+                    style={{
+                      width: '100%',
+                      border: 'none',
+                      borderBottom: '1px solid #e2e8f0',
+                      padding: '8px 0',
+                      background: 'transparent',
+                      color: '#1e293b',
+                      fontSize: '1.15rem',
+                      fontWeight: 'bold',
+                      letterSpacing: '0.3em',
+                      textAlign: 'center',
+                      outline: 'none',
+                      marginTop: 4,
+                      boxSizing: 'border-box',
+                    }}
+                    onFocus={e => e.target.style.borderBottomColor = '#f5a623'}
+                    onBlur={e => e.target.style.borderBottomColor = '#e2e8f0'}
+                  />
+                </div>
+
+                <div style={{
+                  background: '#fef3c7',
+                  border: '1px solid #fde68a',
+                  borderRadius: 12,
+                  padding: '12px 14px',
+                  marginBottom: 24,
+                  fontSize: '0.78rem',
+                  color: '#d97706',
+                  lineHeight: 1.5,
+                  textAlign: 'left'
+                }}>
+                  💡 <strong>Console Log Seeding:</strong> We printed your OTP code to your <strong>backend terminal logs</strong>! Copy and paste it above to verify instantly.
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  style={{
+                    width: '100%',
+                    padding: '12px 0',
+                    borderRadius: 99,
+                    background: '#f5a623',
+                    color: '#ffffff',
+                    border: 'none',
+                    fontSize: '0.92rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 14px rgba(245,166,35,0.3)',
+                    transition: 'all 0.2s',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  {loading ? 'Verifying...' : 'Verify OTP & Enter Dashboard'}
+                </button>
+              </form>
+            )}
+
+            {/* Navigation buttons */}
+            {!otpSent && (
+              <div style={{ display: 'flex', gap: 12 }}>
+                <button
+                  type="button"
+                  onClick={handlePrevPhase}
+                  style={{
+                    flex: 1,
+                    padding: '11px 0',
+                    borderRadius: 99,
+                    background: 'transparent',
+                    color: '#64748b',
+                    border: '1px solid #cbd5e1',
+                    fontSize: '0.88rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  ← Back
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSendOtp}
+                  disabled={!isPhoneValid || loading}
+                  style={{
+                    flex: 1.5,
+                    padding: '11px 0',
+                    borderRadius: 99,
+                    background: isPhoneValid ? '#f5a623' : '#e2e8f0',
+                    color: isPhoneValid ? '#ffffff' : '#94a3b8',
+                    border: 'none',
+                    fontSize: '0.88rem',
+                    fontWeight: 700,
+                    cursor: isPhoneValid ? 'pointer' : 'not-allowed',
+                    boxShadow: isPhoneValid ? '0 4px 14px rgba(245,166,35,0.2)' : 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  {loading ? 'Registering...' : 'Register & Send OTP'}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Card Footer toggle back to login */}
+        {!otpSent && (
+          <div style={{ marginTop: 28, fontSize: '0.82rem', color: '#64748b' }}>
+            Already have an account?{' '}
+            <Link to="/login" style={{ color: '#f5a623', fontWeight: 600, textDecoration: 'none' }}>
+              Sign In
+            </Link>
+          </div>
+        )}
       </div>
+      <style>{`
+        @keyframes fade-in {
+          from { opacity: 0; transform: translateY(8px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </div>
   );
 }

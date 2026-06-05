@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
+import AuthVisual from '../../components/auth/AuthVisual';
 
 export default function VerifyEmailPage() {
   const { token } = useParams();
@@ -39,48 +40,57 @@ export default function VerifyEmailPage() {
 
   return (
     <div className="auth-page">
-      <div className="auth-bg" />
-      <div className="auth-card" style={{ textAlign: 'center' }}>
-        <div className="auth-logo">⚡ DevQueue</div>
+      {/* Left Column - Content */}
+      <div className="auth-left">
+        <div className="auth-left-content" style={{ textAlign: 'center' }}>
+          {/* Logo brand */}
+          <Link to="/" className="auth-brand" style={{ justifyContent: 'center' }}>
+            <div className="auth-brand-logo">BQ</div>
+            <span className="auth-brand-name">BuildQueue</span>
+          </Link>
 
-        {status === 'verifying' && (
-          <div>
-            <div className="spinner" style={{ width: 40, height: 40, margin: '0 auto 20px', borderThickness: 3 }} />
-            <h1>Verifying Your Email...</h1>
-            <p className="auth-sub">Checking token credentials with secure servers.</p>
-          </div>
-        )}
+          {status === 'verifying' && (
+            <div style={{ marginTop: 20 }}>
+              <div className="spinner spinner-dark" style={{ width: 40, height: 40, margin: '0 auto 24px' }} />
+              <h1>Verifying Email...</h1>
+              <p className="auth-sub">Checking token credentials with secure servers.</p>
+            </div>
+          )}
 
-        {status === 'success' && (
-          <div>
-            <div style={{ fontSize: '3rem', marginBottom: 20 }}>✅</div>
-            <h1 style={{ color: '#34d399' }}>Verified!</h1>
-            <p className="auth-sub" style={{ marginBottom: 24 }}>{message}</p>
-            <p style={{ fontSize: '0.8rem', color: 'var(--txt-2)', marginBottom: 20 }}>
-              Redirecting you to the login screen in a few seconds...
-            </p>
-            <Link to="/login?verified=true" className="btn btn-primary btn-full">
-              Go to Login Now
-            </Link>
-          </div>
-        )}
-
-        {status === 'error' && (
-          <div>
-            <div style={{ fontSize: '3rem', marginBottom: 20 }}>❌</div>
-            <h1 style={{ color: '#f43f5e' }}>Verification Failed</h1>
-            <p className="auth-sub" style={{ marginBottom: 24 }}>{message}</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <Link to="/register" className="btn btn-primary btn-full">
-                Register Again
-              </Link>
-              <Link to="/login" className="link-muted" style={{ fontSize: '0.85rem' }}>
-                Back to Login
+          {status === 'success' && (
+            <div style={{ marginTop: 20 }}>
+              <div style={{ fontSize: '3rem', marginBottom: 20 }}>✨</div>
+              <h1 style={{ color: 'var(--a1)' }}>Email Verified</h1>
+              <p className="auth-sub" style={{ marginBottom: 24 }}>{message}</p>
+              <p style={{ fontSize: '0.8rem', color: 'var(--t3)', marginBottom: 20 }}>
+                Redirecting you to the workspace in a few seconds...
+              </p>
+              <Link to="/login?verified=true" className="btn-dark btn-full">
+                Go to Login Now
               </Link>
             </div>
-          </div>
-        )}
+          )}
+
+          {status === 'error' && (
+            <div style={{ marginTop: 20 }}>
+              <div style={{ fontSize: '3rem', marginBottom: 20 }}>⚠️</div>
+              <h1 style={{ color: 'var(--a4)' }}>Verification Failed</h1>
+              <p className="auth-sub" style={{ marginBottom: 24 }}>{message}</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <Link to="/register" className="btn-dark btn-full">
+                  Register Again
+                </Link>
+                <Link to="/login" className="link-muted" style={{ fontSize: '0.82rem' }}>
+                  Back to Login
+                </Link>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* Right Column - Illustration Panel */}
+      <AuthVisual />
     </div>
   );
 }

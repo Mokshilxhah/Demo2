@@ -1,62 +1,110 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 
 const cells = [
   {
     key: 'a', cls: 'bento-a',
-    emoji: '📡', title: 'Real-Time Queue Tracking',
-    desc: 'Watch your project move live through our transparent pipeline. No guessing — always know your exact position.',
-    gradFrom: 'rgba(139,92,246,0.15)', gradTo: 'rgba(59,130,246,0.05)',
+    icon: '📡',
+    title: 'Real-Time Queue Tracking',
+    desc: 'Watch your project move through our pipeline live. Always know your exact position — no chasing for updates.',
+    accentColor: 'var(--a1)',
+    accentBg: 'rgba(110,231,183,0.08)',
+    barColor: 'linear-gradient(90deg, var(--a1), var(--a2))',
   },
   {
     key: 'b', cls: 'bento-b',
-    emoji: '💰', title: 'Instant Budget Estimation',
-    desc: 'Receive a precise breakdown of cost and time the moment your project is reviewed.',
-    gradFrom: 'rgba(236,72,153,0.15)', gradTo: 'rgba(245,158,11,0.05)',
+    icon: '💰',
+    title: 'Instant Budget Estimation',
+    desc: 'Receive a precise, honest cost breakdown the moment your project is reviewed. No hidden fees, ever.',
+    accentColor: 'var(--a3)',
+    accentBg: 'rgba(251,191,36,0.06)',
+    barColor: 'linear-gradient(90deg, var(--a3), var(--a4))',
   },
   {
     key: 'c', cls: 'bento-c',
-    emoji: '🔔', title: 'WhatsApp Alerts',
-    desc: 'Get notified on every status change directly to your phone.',
-    gradFrom: 'rgba(16,185,129,0.15)', gradTo: 'transparent',
+    icon: '🔔',
+    title: 'WhatsApp Alerts',
+    desc: 'Every status change, delivered to your phone the moment it happens.',
+    accentColor: 'var(--a2)',
+    accentBg: 'rgba(129,140,248,0.06)',
+    barColor: 'linear-gradient(90deg, var(--a2), var(--a1))',
   },
   {
     key: 'd', cls: 'bento-d',
-    emoji: '🔒', title: 'Secure & Scalable',
-    desc: 'Enterprise-grade code standards on every single build.',
-    gradFrom: 'rgba(245,158,11,0.15)', gradTo: 'transparent',
+    icon: '🔒',
+    title: 'Secure & Scalable',
+    desc: 'Enterprise-grade code standards and security practices on every build.',
+    accentColor: 'var(--a4)',
+    accentBg: 'rgba(249,168,212,0.06)',
+    barColor: 'linear-gradient(90deg, var(--a4), var(--a2))',
   },
   {
     key: 'e', cls: 'bento-e',
-    emoji: '⚡', title: 'Rapid Delivery',
-    desc: 'Tight deadlines. Zero compromise on quality.',
-    gradFrom: 'rgba(6,182,212,0.15)', gradTo: 'transparent',
+    icon: '⚡',
+    title: 'Rapid Delivery',
+    desc: 'Tight timelines met without compromise on quality.',
+    accentColor: 'var(--a5)',
+    accentBg: 'rgba(147,197,253,0.06)',
+    barColor: 'linear-gradient(90deg, var(--a5), var(--a2))',
   },
 ];
 
 export default function Features() {
+  const cellRefs = useRef([]);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      entries => entries.forEach(e => {
+        if (e.isIntersecting) e.target.classList.add('visible');
+      }),
+      { threshold: 0.1 }
+    );
+    cellRefs.current.forEach(el => el && observer.observe(el));
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <section id="features" className="features-section">
       <div className="wrap">
-        <div className="section-header">
-          <span className="label">Core Advantages</span>
-          <h2 className="heading-lg">Why Choose BuildQueue</h2>
-          <p className="body-md">Every feature is designed so you can focus on your business, not on chasing updates.</p>
+
+        <div className="sec-head">
+          <div className="eyebrow">Core Advantages</div>
+          <h2 className="h2">Why Teams Choose BuildQueue</h2>
+          <p className="body-md">
+            Every feature is built so you stay focused on your business — not on chasing updates.
+          </p>
         </div>
 
         <div className="bento">
-          {cells.map(c => (
+          {cells.map((c, i) => (
             <div
               key={c.key}
-              className={`glass bento-cell ${c.cls}`}
-              style={{ background: `linear-gradient(135deg,${c.gradFrom},${c.gradTo})` }}
+              ref={el => cellRefs.current[i] = el}
+              className={`bento-cell ${c.cls} reveal`}
+              style={{
+                transitionDelay: `${i * 80}ms`,
+                background: c.accentBg,
+              }}
             >
-              <div className="cell-icon">{c.emoji}</div>
+              {/* Top accent line */}
+              <div className="cell-accent-bar" style={{ background: c.barColor }} />
+
+              {/* Background glyph */}
+              <div className="cell-bg-glyph">{c.icon}</div>
+
+              {/* Icon */}
+              <div
+                className="bento-cell-icon"
+                style={{ background: c.accentBg, border: `1px solid ${c.accentColor}22` }}
+              >
+                {c.icon}
+              </div>
+
               <h3>{c.title}</h3>
               <p>{c.desc}</p>
-              <div className="cell-bg">{c.emoji}</div>
             </div>
           ))}
         </div>
+
       </div>
     </section>
   );

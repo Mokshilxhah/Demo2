@@ -37,6 +37,8 @@ const UserSchema = new mongoose.Schema({
   },
   emailVerificationToken: String,
   emailVerificationExpiry: Date,
+  emailVerificationOTP: String,
+  emailVerificationOTPExpiry: Date,
   passwordResetToken: String,
   passwordResetExpiry: Date,
   phone: {

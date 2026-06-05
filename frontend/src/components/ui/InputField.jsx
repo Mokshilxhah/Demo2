@@ -10,13 +10,18 @@ function getStrength(password) {
   return score;
 }
 
-export default function InputField({ label, type = 'text', showStrength, ...props }) {
+export default function InputField({ label, rightLabel, type = 'text', showStrength, ...props }) {
   const [show, setShow] = useState(false);
   const strength = showStrength ? getStrength(props.value || '') : 0;
 
   return (
     <div className="input-group">
-      {label && <label className="input-label">{label}</label>}
+      {(label || rightLabel) && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+          {label && <label className="input-label" style={{ marginBottom: 0 }}>{label}</label>}
+          {rightLabel && rightLabel}
+        </div>
+      )}
       <div className="input-wrap" style={{ position: 'relative' }}>
         <input 
           type={type === 'password' ? (show ? 'text' : 'password') : type} 

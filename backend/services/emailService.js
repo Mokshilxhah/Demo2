@@ -1,14 +1,15 @@
 const nodemailer = require('nodemailer');
 
-const sendVerificationEmail = async (email, name, token) => {
+const sendVerificationEmail = async (email, name, token, otp) => {
   const verifyUrl = `${process.env.CLIENT_URL || 'http://localhost:5173'}/verify-email/${token}`;
   
-  // 1. Always log a beautiful card in the server terminal with the verification link for local development
+  // 1. Always log a beautiful card in the server terminal with the verification link and OTP
   console.log('\n┌────────────────────────────────────────────────────────┐');
   console.log('│                    📧 EMAIL SIMULATOR                  │');
   console.log('├────────────────────────────────────────────────────────┤');
   console.log(`│ To: ${email.padEnd(51)}│`);
   console.log(`│ Name: ${name.padEnd(49)}│`);
+  console.log(`│ Verification OTP: ${otp.padEnd(37)}│`);
   console.log('│                                                        │');
   console.log('│ Please verify your email by clicking the link below:   │');
   console.log(`│ ${verifyUrl.padEnd(55)} │`);
@@ -34,11 +35,15 @@ const sendVerificationEmail = async (email, name, token) => {
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #0d0e12; color: #f3f4f6; border-radius: 12px; border: 1px solid #1e293b;">
             <h2 style="color: #8b5cf6; text-align: center;">Welcome to DevQueue, ${name}!</h2>
-            <p style="font-size: 16px; line-height: 1.6; text-align: center;">Thank you for registering. Please click the button below to verify your email and activate your account:</p>
-            <div style="text-align: center; margin: 30px 0;">
+            <p style="font-size: 16px; line-height: 1.6; text-align: center;">Thank you for registering. Your verification OTP code is:</p>
+            <div style="text-align: center; font-size: 28px; font-weight: bold; letter-spacing: 8px; color: #f59e0b; margin: 20px 0; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 6px; border: 1px dashed rgba(255,255,255,0.1);">
+              ${otp}
+            </div>
+            <p style="font-size: 14px; line-height: 1.6; text-align: center;">Alternatively, you can verify your email directly by clicking the button below:</p>
+            <div style="text-align: center; margin: 20px 0;">
               <a href="${verifyUrl}" style="background: linear-gradient(135deg, #8b5cf6, #6366f1); color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">Verify Email Address</a>
             </div>
-            <p style="font-size: 12px; color: #9ca3af; text-align: center;">This link will expire in 24 hours.</p>
+            <p style="font-size: 12px; color: #9ca3af; text-align: center;">This code and link will expire in 24 hours.</p>
             <hr style="border: 0; border-top: 1px solid #1e293b; margin: 20px 0;" />
             <p style="font-size: 12px; color: #6b7280; text-align: center;">If you didn't create this account, you can ignore this email.</p>
           </div>

@@ -5,7 +5,7 @@ import Hero from './components/Hero';
 import TechMarquee from './components/TechMarquee';
 import WorkingFlow from './components/WorkingFlow';
 import Features from './components/Features';
-import TechStack from './components/TechStack';
+import FullStackProjects from './components/FullStackProjects';
 import DemoProjects from './components/DemoProjects';
 import GetStarted from './components/GetStarted';
 import Footer from './components/Footer';
@@ -15,6 +15,8 @@ import RegisterPage from './pages/auth/RegisterPage';
 import LoginPage from './pages/auth/LoginPage';
 import AdminLoginPage from './pages/auth/AdminLoginPage';
 import VerifyEmailPage from './pages/auth/VerifyEmailPage';
+import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
+import ResetPasswordPage from './pages/auth/ResetPasswordPage';
 import UserDashboard from './pages/dashboard/UserDashboard';
 import AdminDashboard from './pages/dashboard/AdminDashboard';
 import { ProtectedRoute, AdminRoute } from './components/ProtectedRoute';
@@ -28,7 +30,7 @@ function LandingPage() {
         <TechMarquee />
         <WorkingFlow />
         <Features />
-        <TechStack />
+        <FullStackProjects />
         <DemoProjects />
         <GetStarted />
       </main>
@@ -45,23 +47,24 @@ export default function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/admin" element={<AdminLoginPage />} />
       <Route path="/verify-email/:token" element={<VerifyEmailPage />} />
-      
-      {/* Protected Routes */}
-      <Route 
-        path="/dashboard" 
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+
+      <Route
+        path="/dashboard"
         element={
           <ProtectedRoute>
             <UserDashboard />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/admin/dashboard" 
+      <Route
+        path="/admin/dashboard"
         element={
           <AdminRoute>
             <AdminDashboard />
           </AdminRoute>
-        } 
+        }
       />
     </Routes>
   );

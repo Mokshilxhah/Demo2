@@ -1,35 +1,50 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import React, { useState } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
-export default function LoginPage() {
-  const [form, setForm] = useState({ email: '', password: '' });
+export default function ResetPasswordPage() {
+  const { token } = useParams();
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [searchParams] = useSearchParams();
   
-  const { login, toast } = useAuth();
+  const { toast } = useAuth();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    // Check if redirecting from email verification
-    if (searchParams.get('verified') === 'true') {
-      toast.success('Email verified successfully! You can now log in.');
-    }
-  }, [searchParams, toast]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!password || !confirmPassword) {
+      toast.error('Please fill in both fields.');
+      return;
+    }
+    if (password.length < 8) {
+      toast.error('Password must be at least 8 characters long.');
+      return;
+    }
+    if (password !== confirmPassword) {
+      toast.error('Passwords do not match.');
+      return;
+    }
+
     setLoading(true);
     try {
-      const user = await login(form);
-      toast.success(`Welcome back, ${user.name}!`);
-      if (user.role === 'admin') {
-        navigate('/admin/dashboard');
-      } else {
-        navigate('/dashboard');
+      const res = await fetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, password })
+      });
+      const data = await res.json();
+      
+      if (!data.success) {
+        throw new Error(data.message || 'Reset failed');
       }
+
+      toast.success('Password reset successfully! Redirecting to login...');
+      setTimeout(() => {
+        navigate('/login');
+      }, 2000);
     } catch (err) {
-      toast.error(err.message || 'Invalid credentials');
+      toast.error(err.message || 'Invalid or expired token.');
     } finally {
       setLoading(false);
     }
@@ -70,72 +85,45 @@ export default function LoginPage() {
         textAlign: 'center',
         boxSizing: 'border-box',
       }}>
-        {/* Top smartphone & profile illustration */}
+        {/* Top security lock illustration */}
         <svg viewBox="0 0 200 130" style={{ width: 140, height: 90, margin: '0 auto 16px', display: 'block' }}>
           {/* Base dotted line */}
           <line x1="30" y1="95" x2="170" y2="95" stroke="#e2e8f0" strokeWidth="2" strokeDasharray="3,3" />
-          {/* Smartphone Bezel */}
-          <rect x="90" y="20" width="45" height="80" rx="6" fill="none" stroke="#f5a623" strokeWidth="2.5" />
-          <line x1="108" y1="24" x2="117" y2="24" stroke="#f5a623" strokeWidth="2" strokeLinecap="round" />
-          {/* User Profile Card */}
-          <rect x="62" y="32" width="44" height="52" rx="4" fill="#ffffff" stroke="#cbd5e1" strokeWidth="1" />
-          <circle cx="84" cy="50" r="10" fill="#fef3c7" />
-          {/* User Silhouette */}
-          <path d="M76,64 C76,59 80,59 84,59 C88,59 92,59 92,64 L92,68 L76,68 Z" fill="#1e293b" />
-          <circle cx="84" cy="47" r="4.5" fill="#1e293b" />
-          {/* Small floating accents */}
-          <circle cx="68" cy="74" r="2" fill="#f5a623" />
-          <circle cx="74" cy="74" r="2" fill="#cbd5e1" />
-          <line x1="102" y1="70" x2="122" y2="70" stroke="#fde68a" strokeWidth="2" strokeLinecap="round" />
+          {/* Padlock */}
+          <rect x="85" y="45" width="30" height="24" rx="4" fill="none" stroke="#f5a623" strokeWidth="2.5" />
+          <path d="M92,45 L92,34 C92,29 96,25 100,25 C104,25 108,29 108,34 L108,45" fill="none" stroke="#f5a623" strokeWidth="2.5" strokeLinecap="round" />
+          <circle cx="100" cy="54" r="2.5" fill="#f5a623" />
+          <line x1="100" y1="56.5" x2="100" y2="62" stroke="#f5a623" strokeWidth="2" strokeLinecap="round" />
+          {/* Decorative floating check */}
+          <circle cx="65" cy="50" r="10" fill="#ecfdf5" />
+          <path d="M61,50 L64,53 L69,47" fill="none" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          <circle cx="138" cy="62" r="3" fill="#cbd5e1" />
         </svg>
 
-        {/* Form Title */}
+        {/* Title */}
         <h1 style={{
           fontFamily: 'var(--fd)',
           fontSize: '1.6rem',
           fontWeight: 700,
           color: '#1e293b',
-          marginBottom: 32,
+          marginBottom: 10,
           marginTop: 0,
         }}>
-          Log in
+          Reset Password
         </h1>
+        <p style={{ fontSize: '0.8rem', color: '#94a3b8', lineHeight: 1.5, marginBottom: 28 }}>
+          Set a secure new password for your workspace.
+        </p>
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-          {/* Email input field */}
+          {/* New Password input */}
           <div style={{ marginBottom: 24, textAlign: 'left' }}>
-            <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Your Email</label>
-            <input
-              type="email"
-              placeholder="Your Email"
-              value={form.email}
-              onChange={e => setForm({ ...form, email: e.target.value })}
-              required
-              style={{
-                width: '100%',
-                border: 'none',
-                borderBottom: '1px solid #e2e8f0',
-                padding: '8px 0',
-                background: 'transparent',
-                color: '#1e293b',
-                fontSize: '0.9rem',
-                outline: 'none',
-                marginTop: 4,
-                boxSizing: 'border-box',
-              }}
-              onFocus={e => e.target.style.borderBottomColor = '#f5a623'}
-              onBlur={e => e.target.style.borderBottomColor = '#e2e8f0'}
-            />
-          </div>
-
-          {/* Password input field */}
-          <div style={{ marginBottom: 16, textAlign: 'left', position: 'relative' }}>
-            <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Password</label>
+            <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>New Password</label>
             <input
               type="password"
-              placeholder="Password"
-              value={form.password}
-              onChange={e => setForm({ ...form, password: e.target.value })}
+              placeholder="New Password (min 8 chars)"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
               required
               style={{
                 width: '100%',
@@ -154,14 +142,33 @@ export default function LoginPage() {
             />
           </div>
 
-          {/* Forgot password link */}
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 32 }}>
-            <Link to="/forgot-password" style={{ fontSize: '0.78rem', color: '#f5a623', fontWeight: 600, textDecoration: 'none' }}>
-              Forgot password?
-            </Link>
+          {/* Confirm Password input */}
+          <div style={{ marginBottom: 32, textAlign: 'left' }}>
+            <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Confirm Password</label>
+            <input
+              type="password"
+              placeholder="Confirm Password"
+              value={confirmPassword}
+              onChange={e => setConfirmPassword(e.target.value)}
+              required
+              style={{
+                width: '100%',
+                border: 'none',
+                borderBottom: '1px solid #e2e8f0',
+                padding: '8px 0',
+                background: 'transparent',
+                color: '#1e293b',
+                fontSize: '0.9rem',
+                outline: 'none',
+                marginTop: 4,
+                boxSizing: 'border-box',
+              }}
+              onFocus={e => e.target.style.borderBottomColor = '#f5a623'}
+              onBlur={e => e.target.style.borderBottomColor = '#e2e8f0'}
+            />
           </div>
 
-          {/* Submit Action Button */}
+          {/* Submit Button */}
           <button
             type="submit"
             disabled={loading}
@@ -181,24 +188,17 @@ export default function LoginPage() {
               alignItems: 'center',
               justifyContent: 'center',
             }}
-            onMouseEnter={e => {
-              e.currentTarget.style.background = '#e0951b';
-              e.currentTarget.style.boxShadow = '0 6px 20px rgba(245,166,35,0.45)';
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.background = '#f5a623';
-              e.currentTarget.style.boxShadow = '0 4px 14px rgba(245,166,35,0.3)';
-            }}
+            onMouseEnter={e => e.currentTarget.style.background = '#e0951b'}
+            onMouseLeave={e => e.currentTarget.style.background = '#f5a623'}
           >
-            {loading ? 'Logging in...' : 'Log in'}
+            {loading ? 'Resetting password...' : 'Reset Password'}
           </button>
         </form>
 
-        {/* Toggle to register page */}
+        {/* Back to Login */}
         <div style={{ marginTop: 28, fontSize: '0.82rem', color: '#64748b' }}>
-          Don't have an account?{' '}
-          <Link to="/register" style={{ color: '#f5a623', fontWeight: 600, textDecoration: 'none' }}>
-            Register
+          <Link to="/login" style={{ color: '#f5a623', fontWeight: 600, textDecoration: 'none' }}>
+            ← Back to Login
           </Link>
         </div>
       </div>

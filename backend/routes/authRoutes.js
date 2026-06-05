@@ -32,11 +32,17 @@ router.post('/register', authLimiter, registerRules, validate, async (req, res) 
     // Check duplicate
     const existing = await User.findOne({ email });
     if (existing) {
-      return res.status(409).json({ success: false, message: 'Email already registered' });
+      if (!existing.isEmailVerified) {
+        // Delete unverified user to allow fresh registration
+        await User.deleteOne({ _id: existing._id });
+      } else {
+        return res.status(409).json({ success: false, message: 'Email already registered' });
+      }
     }
 
-    // Create verification token
+    // Create verification token & 6-digit numeric OTP
     const verifyToken = crypto.randomBytes(32).toString('hex');
+    const verifyOTP = Math.floor(100000 + Math.random() * 900000).toString();
 
     // Create user
     const user = await User.create({
@@ -45,11 +51,13 @@ router.post('/register', authLimiter, registerRules, validate, async (req, res) 
       password, // hashed automatically by pre-save hook
       phone,
       emailVerificationToken: verifyToken,
-      emailVerificationExpiry: Date.now() + 24 * 60 * 60 * 1000 // 24 hours
+      emailVerificationExpiry: Date.now() + 24 * 60 * 60 * 1000, // 24 hours
+      emailVerificationOTP: verifyOTP,
+      emailVerificationOTPExpiry: Date.now() + 30 * 60 * 1000 // 30 minutes
     });
 
-    // Send verification email
-    await sendVerificationEmail(user.email, user.name, verifyToken);
+    // Send verification email with token & OTP
+    await sendVerificationEmail(user.email, user.name, verifyToken, verifyOTP);
 
     // Generate JWT
     const token = generateToken({ id: user._id, role: user.role });
@@ -59,7 +67,7 @@ router.post('/register', authLimiter, registerRules, validate, async (req, res) 
       .cookie('token', token, cookieOptions)
       .json({
         success: true,
-        message: 'Account created. Please check your email/terminal to verify.',
+        message: 'Account created. Please verify your email using the OTP code.',
         user: {
           id: user._id,
           name: user.name,
@@ -72,6 +80,42 @@ router.post('/register', authLimiter, registerRules, validate, async (req, res) 
   } catch (err) {
     console.error('Register error:', err);
     res.status(500).json({ success: false, message: 'Server error during registration' });
+  }
+});
+
+/**
+ * @route   POST /api/auth/verify-otp
+ * @desc    Verify email address using 6-digit OTP code
+ * @access  Public
+ */
+router.post('/verify-otp', async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+    if (!email || !otp) {
+      return res.status(400).json({ success: false, message: 'Email and OTP code are required' });
+    }
+
+    const user = await User.findOne({
+      email: email.toLowerCase(),
+      emailVerificationOTP: otp,
+      emailVerificationOTPExpiry: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return res.status(400).json({ success: false, message: 'Invalid or expired OTP code' });
+    }
+
+    user.isEmailVerified = true;
+    user.emailVerificationToken = undefined;
+    user.emailVerificationExpiry = undefined;
+    user.emailVerificationOTP = undefined;
+    user.emailVerificationOTPExpiry = undefined;
+    await user.save();
+
+    res.json({ success: true, message: 'Email verified successfully. You can now log in.' });
+  } catch (err) {
+    console.error('Verify OTP error:', err);
+    res.status(500).json({ success: false, message: 'Server error during OTP verification' });
   }
 });
 
@@ -222,6 +266,75 @@ router.post('/logout', verifyToken, (req, res) => {
       sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
     })
     .json({ success: true, message: 'Logged out successfully' });
+});
+
+/**
+ * @route   POST /api/auth/forgot-password
+ * @desc    Generate password reset token and print to console log
+ * @access  Public
+ */
+router.post('/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Email address is required' });
+    }
+
+    const user = await User.findOne({ email: email.toLowerCase() });
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'Account not found with this email' });
+    }
+
+    // Generate reset token and expiry
+    const resetToken = crypto.randomBytes(20).toString('hex');
+    user.passwordResetToken = resetToken;
+    user.passwordResetExpiry = Date.now() + 3600000; // 1 hour
+    await user.save();
+
+    // Console seed log
+    console.log(`\n🔑 [PASSWORD RESET SEED LOG]`);
+    console.log(`User: ${user.name} (${user.email})`);
+    console.log(`Reset URL: http://localhost:5173/reset-password/${resetToken}\n`);
+
+    res.json({ success: true, message: 'Password reset link generated and printed to console log.' });
+  } catch (err) {
+    console.error('Forgot password error:', err);
+    res.status(500).json({ success: false, message: 'Server error during forgot password' });
+  }
+});
+
+/**
+ * @route   POST /api/auth/reset-password
+ * @desc    Reset password using reset token
+ * @access  Public
+ */
+router.post('/reset-password', async (req, res) => {
+  try {
+    const { token, password } = req.body;
+    if (!token || !password) {
+      return res.status(400).json({ success: false, message: 'Token and new password are required' });
+    }
+
+    const user = await User.findOne({
+      passwordResetToken: token,
+      passwordResetExpiry: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return res.status(400).json({ success: false, message: 'Invalid or expired reset token' });
+    }
+
+    // Update password
+    user.password = password; // hashes automatically on save
+    user.passwordResetToken = undefined;
+    user.passwordResetExpiry = undefined;
+    await user.save();
+
+    res.json({ success: true, message: 'Password has been reset successfully! You can now log in.' });
+  } catch (err) {
+    console.error('Reset password error:', err);
+    res.status(500).json({ success: false, message: 'Server error during password reset' });
+  }
 });
 
 module.exports = router;
