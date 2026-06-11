@@ -20,7 +20,16 @@ const seedAdmins = [
 // ==========================================
 // 👤 EDIT CLIENTS HERE
 // ==========================================
-const seedClients = [];
+const seedClients = [
+  {
+    name: 'Aryan Mehta',
+    email: 'user@devqueue.studio',
+    password: 'SuperSecureUserPass123!',
+    role: 'user',
+    isEmailVerified: true,
+    phone: '+91 98765 43210'
+  }
+];
 
 // ==========================================
 // 📋 EDIT SEED PROJECTS HERE

@@ -36,6 +36,20 @@ export default function LoginPage() {
     }
   };
 
+  const handleQuickLogin = async () => {
+    setLoading(true);
+    try {
+      const credentials = { email: 'user@devqueue.studio', password: 'SuperSecureUserPass123!' };
+      const loggedUser = await login(credentials);
+      toast.success(`Welcome to DevQueue (Demo), ${loggedUser.name}!`);
+      navigate('/dashboard');
+    } catch (err) {
+      toast.error(err.message || 'Quick login failed. Please ensure the database is seeded.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="auth-outer-wrapper" style={{
       minHeight: '100vh',
@@ -226,6 +240,41 @@ export default function LoginPage() {
             {loading ? 'Logging in...' : 'Log in'}
           </button>
         </form>
+
+        {/* Divider */}
+        <div style={{ display: 'flex', alignItems: 'center', margin: '24px 0 16px 0', color: '#94a3b8', fontSize: '0.75rem' }}>
+          <div style={{ flex: 1, height: '1px', background: '#e2e8f0' }} />
+          <span style={{ padding: '0 10px', textTransform: 'uppercase', fontWeight: 600 }}>Quick Access Demo</span>
+          <div style={{ flex: 1, height: '1px', background: '#e2e8f0' }} />
+        </div>
+
+        {/* Quick Demo Login Buttons */}
+        <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
+          <button
+            onClick={handleQuickLogin}
+            disabled={loading}
+            style={{
+              flex: 1,
+              padding: '10px 14px',
+              borderRadius: 12,
+              background: 'rgba(245,166,35,0.08)',
+              color: '#f5a623',
+              border: '1px solid rgba(245,166,35,0.2)',
+              fontSize: '0.8rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.background = 'rgba(245,166,35,0.15)';
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.background = 'rgba(245,166,35,0.08)';
+            }}
+          >
+            🔑 Demo Client
+          </button>
+        </div>
 
         {/* Toggle to register page */}
         <div style={{ marginTop: 24, fontSize: '0.82rem', color: '#64748b' }}>
