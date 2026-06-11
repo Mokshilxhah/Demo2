@@ -9,7 +9,7 @@ const TIERS = [
 
 const FEATURES = [
   { id: 'admin',     label: 'Admin Dashboard',        addMin: 400,  addMax: 800,  days: 5,  icon: '🗂️' },
-  { id: 'whatsapp',  label: 'WhatsApp Alerts',         addMin: 150,  addMax: 300,  days: 2,  icon: '💬' },
+  { id: 'email_alerts', label: 'Instant Email Alerts',      addMin: 150,  addMax: 300,  days: 2,  icon: '📧' },
   { id: 'realtime',  label: 'Real-Time Queue View',    addMin: 200,  addMax: 450,  days: 4,  icon: '📊' },
   { id: 'multilang', label: 'Multi-Language Support',  addMin: 350,  addMax: 700,  days: 6,  icon: '🌐' },
   { id: 'api',       label: 'Custom API Integrations', addMin: 300,  addMax: 600,  days: 5,  icon: '🔌' },

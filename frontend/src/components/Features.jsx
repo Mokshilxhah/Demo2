@@ -21,9 +21,9 @@ const cells = [
   },
   {
     key: 'c', cls: 'bento-c',
-    icon: '🔔',
-    title: 'WhatsApp Alerts',
-    desc: 'Every status change, delivered to your phone the moment it happens.',
+    icon: '📧',
+    title: 'Instant Email Alerts',
+    desc: 'Every status change and milestone update is delivered directly to your inbox the moment it happens.',
     accentColor: 'var(--a2)',
     accentBg: 'rgba(129,140,248,0.06)',
     barColor: 'linear-gradient(90deg, var(--a2), var(--a1))',
@@ -68,7 +68,7 @@ export default function Features() {
 
         <div className="sec-head">
           <div className="eyebrow">Core Advantages</div>
-          <h2 className="h2">Why Teams Choose BuildQueue</h2>
+          <h2 className="h2">Why Teams Choose Reqworks</h2>
           <p className="body-md">
             Every feature is built so you stay focused on your business — not on chasing updates.
           </p>

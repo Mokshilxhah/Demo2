@@ -79,9 +79,9 @@ export default function FullStackProjects() {
         </div>
 
         {/* Blueprint Grid */}
-        <div style={{
+        <div className="blueprints-grid" style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
           gap: 24,
         }}>
           {BLUEPRINTS.map((bp) => (

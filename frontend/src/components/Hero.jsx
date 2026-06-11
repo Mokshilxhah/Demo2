@@ -117,7 +117,7 @@ export default function Hero() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
 
           {/* Row 1: Status + Queue Position */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="hero-bento-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
 
             {/* Stage status cell */}
             <div style={{
@@ -254,7 +254,7 @@ export default function Hero() {
           </div>
 
           {/* Row 3: Stack + ETA chips */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+          <div className="hero-bento-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
             <div style={{
               background: 'var(--bg-3)', border: '1px solid var(--b1)', borderRadius: 12, padding: '10px 14px',
             }}>
@@ -295,6 +295,11 @@ export default function Hero() {
         }
         @media (max-width: 560px) {
           .hero { padding: 90px 0 60px !important; }
+        }
+        @media (max-width: 480px) {
+          .hero-bento-grid-2 {
+            grid-template-columns: 1fr !important;
+          }
         }
       `}</style>
     </section>

@@ -53,7 +53,7 @@ const amazingCards = [
     desc: 'Submit your brief today — receive a precise timeline, cost estimate, and stack recommendation by tomorrow.',
     visual: (
       <div style={{ padding: '14px 16px' }}>
-        <div style={{ fontFamily: 'var(--fm)', fontSize: '0.58rem', color: 'var(--t4)', marginBottom: 10 }}>BuildQueue Team · Today, 10:42 AM</div>
+        <div style={{ fontFamily: 'var(--fm)', fontSize: '0.58rem', color: 'var(--t4)', marginBottom: 10 }}>Reqworks Team · Today, 10:42 AM</div>
         {/* Chat bubble from team */}
         <div style={{ background: 'rgba(129,140,248,0.12)', border: '1px solid rgba(129,140,248,0.22)', borderRadius: '12px 12px 12px 3px', padding: '10px 12px', marginBottom: 8 }}>
           <div style={{ fontSize: '0.72rem', color: 'var(--t1)', lineHeight: 1.6, marginBottom: 6 }}>Hi! We've reviewed your project. Here's your estimate:</div>
@@ -83,11 +83,11 @@ const amazingCards = [
     visual: (
       <div style={{ padding: '14px 16px' }}>
         <div style={{ fontFamily: 'var(--fm)', fontSize: '0.58rem', color: 'var(--t4)', marginBottom: 12 }}>Cost comparison</div>
-        {/* Agency vs BuildQueue comparison */}
+        {/* Agency vs Reqworks comparison */}
         {[
           { label: 'Large Agency', val: '$18,000+', pct: '100%', color: 'rgba(249,168,212,0.7)', muted: true },
           { label: 'Freelancer (Risk)', val: '$8,000+', pct: '55%',  color: 'rgba(251,191,36,0.5)', muted: true },
-          { label: 'BuildQueue', val: '$2.4k–$9k', pct: '38%',  color: '#6ee7b7', muted: false },
+          { label: 'Reqworks', val: '$2.4k–$9k', pct: '38%',  color: '#6ee7b7', muted: false },
         ].map(r => (
           <div key={r.label} style={{ marginBottom: 10 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
@@ -130,10 +130,10 @@ const footerCols = [
   {
     title: 'Contact',
     links: [
-      { label: 'hello@buildqueue.dev', href: 'mailto:hello@buildqueue.dev' },
-      { label: 'WhatsApp Us',          href: '#' },
-      { label: 'Privacy Policy',       href: '#' },
-      { label: 'Terms of Service',     href: '#' },
+      { label: 'reqworks.tech@gmail.com', href: 'mailto:reqworks.tech@gmail.com' },
+      { label: 'WhatsApp Us',          href: 'https://wa.me/916352834093' },
+      { label: 'Privacy Policy',       href: '/privacy-policy' },
+      { label: 'Terms of Service',     href: '/terms-of-service' },
     ],
   },
 ];
@@ -141,20 +141,20 @@ const footerCols = [
 export default function Footer() {
   return (
     <footer className="footer">
-      <div className="footer-watermark" aria-hidden="true">BQ</div>
+      <div className="footer-watermark" aria-hidden="true">RW</div>
 
       {/* ── What's Amazing ── */}
       <div className="footer-ref-row">
         <div className="wrap">
           <div style={{ marginBottom: 40, textAlign: 'center' }}>
-            <div className="eyebrow" style={{ justifyContent: 'center' }}>Why BuildQueue</div>
+            <div className="eyebrow" style={{ justifyContent: 'center' }}>Why Reqworks</div>
             <h2 className="h2" style={{ marginBottom: 10 }}>
               What Makes Us <span className="grad-1">Amazing</span>
             </h2>
-            <p className="body-md">Three things that set every BuildQueue project apart.</p>
+            <p className="body-md">Three things that set every Reqworks project apart.</p>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
+          <div className="ref-cards">
             {amazingCards.map((card, i) => (
               <div key={i} style={{
                 borderRadius: 18,
@@ -213,17 +213,35 @@ export default function Footer() {
           {/* Brand */}
           <div className="footer-brand">
             <div className="footer-brand-logo">
-              <div className="logo-mark">BQ</div>
-              <span className="logo-text">BuildQueue</span>
+              <div style={{ width: '38px', height: '38px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, padding: '2px', background: '#fff' }}>
+                <img src="/images/logo.png" alt="Reqworks" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+              </div>
+              <span className="logo-text">Reqworks</span>
             </div>
             <p>
               A transparent, queue-based project studio. We turn your ideas into
               production-ready applications with honest pricing and full visibility.
             </p>
             <div className="footer-socials">
-              {['Twitter', 'GitHub', 'LinkedIn', 'WhatsApp'].map((s, i) => (
-                <a key={i} href="#" className="footer-social-link">{s}</a>
-              ))}
+              {['LinkedIn', 'WhatsApp', 'Email'].map((s, i) => {
+                let href = '#';
+                if (s === 'LinkedIn') href = 'https://www.linkedin.com/company/reqworks/';
+                if (s === 'WhatsApp') href = 'https://wa.me/916352834093';
+                if (s === 'Email') href = 'mailto:reqworks.tech@gmail.com';
+                
+                const isMail = s === 'Email';
+                return (
+                  <a
+                    key={i}
+                    href={href}
+                    className="footer-social-link"
+                    target={isMail ? undefined : "_blank"}
+                    rel={isMail ? undefined : "noopener noreferrer"}
+                  >
+                    {s}
+                  </a>
+                );
+              })}
             </div>
           </div>
 
@@ -245,12 +263,17 @@ export default function Footer() {
         {/* Bottom bar */}
         <div className="footer-bottom">
           <span className="footer-copyright">
-            © {new Date().getFullYear()} BuildQueue. Built with care and precision.
+            © {new Date().getFullYear()} Reqworks. Built with care and precision.
           </span>
           <div className="footer-legal">
-            {['Privacy Policy', 'Terms of Service', 'Cookie Policy'].map((l, i) => (
-              <a key={i} href="#">{l}</a>
-            ))}
+            {['Privacy Policy', 'Terms of Service', 'Cookie Policy'].map((l, i) => {
+              let href = '#';
+              if (l === 'Privacy Policy') href = '/privacy-policy';
+              if (l === 'Terms of Service') href = '/terms-of-service';
+              return (
+                <a key={i} href={href}>{l}</a>
+              );
+            })}
           </div>
         </div>
       </div>

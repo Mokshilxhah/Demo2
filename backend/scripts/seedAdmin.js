@@ -21,14 +21,14 @@ async function seedAdmin() {
       process.exit(0);
     }
 
-    const adminEmail = process.env.ADMIN_EMAIL || 'admin@devqueue.studio';
-    const adminPassword = process.env.ADMIN_PASSWORD || 'SuperSecureAdminPass123!';
+    const adminEmail = process.env.ADMIN_EMAIL || 'Reqworks.tech@gmail.com';
+    const adminPassword = process.env.ADMIN_PASSWORD || '@#$Req0046';
 
     console.log(`Seeding admin user: ${adminEmail}`);
     await User.create({
       name: 'DevQueue Admin',
       email: adminEmail,
-      password: adminPassword, // Will hash automatically
+      password: adminPassword,
       role: 'admin',
       isEmailVerified: true
     });

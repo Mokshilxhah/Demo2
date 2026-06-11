@@ -3,7 +3,7 @@ const router = express.Router();
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const User = require('../models/User');
-const { sendVerificationEmail } = require('../services/emailService');
+const { sendVerificationEmail, sendPasswordResetEmail } = require('../services/emailService');
 const { verifyToken } = require('../middleware/authMiddleware');
 const { registerRules, loginRules, validate } = require('../middleware/validate');
 const { authLimiter } = require('../middleware/rateLimiter');
@@ -11,6 +11,21 @@ const { authLimiter } = require('../middleware/rateLimiter');
 // Token generation helper
 const generateToken = (payload) =>
   jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRE || '7d' });
+
+// Customer ID generation helper
+const generateCustomerId = async () => {
+  let isUnique = false;
+  let customerId = '';
+  while (!isUnique) {
+    const randomNum = Math.floor(10000 + Math.random() * 90000); // 5 digits
+    customerId = `CID-${randomNum}`;
+    const existing = await User.findOne({ customerId });
+    if (!existing) {
+      isUnique = true;
+    }
+  }
+  return customerId;
+};
 
 // Cookie configurations
 const cookieOptions = {
@@ -27,9 +42,9 @@ const cookieOptions = {
  */
 router.post('/register', authLimiter, registerRules, validate, async (req, res) => {
   try {
-    const { name, email, password, phone } = req.body;
+    const { name, email, password, phone, occupation } = req.body;
 
-    // Check duplicate
+    // Check duplicate email
     const existing = await User.findOne({ email });
     if (existing) {
       if (!existing.isEmailVerified) {
@@ -40,16 +55,29 @@ router.post('/register', authLimiter, registerRules, validate, async (req, res) 
       }
     }
 
+    // Check duplicate phone
+    if (phone) {
+      const existingPhone = await User.findOne({ phone });
+      if (existingPhone) {
+        if (existingPhone.isEmailVerified || existingPhone.email !== email.toLowerCase()) {
+          return res.status(409).json({ success: false, message: 'Phone number already registered' });
+        }
+      }
+    }
+
     // Create verification token & 6-digit numeric OTP
     const verifyToken = crypto.randomBytes(32).toString('hex');
     const verifyOTP = Math.floor(100000 + Math.random() * 900000).toString();
+    const customerId = await generateCustomerId();
 
     // Create user
     const user = await User.create({
+      customerId,
       name,
       email,
       password, // hashed automatically by pre-save hook
       phone,
+      occupation,
       emailVerificationToken: verifyToken,
       emailVerificationExpiry: Date.now() + 24 * 60 * 60 * 1000, // 24 hours
       emailVerificationOTP: verifyOTP,
@@ -70,6 +98,7 @@ router.post('/register', authLimiter, registerRules, validate, async (req, res) 
         message: 'Account created. Please verify your email using the OTP code.',
         user: {
           id: user._id,
+          customerId: user.customerId,
           name: user.name,
           email: user.email,
           role: user.role,
@@ -129,7 +158,7 @@ router.post('/login', authLimiter, loginRules, validate, async (req, res) => {
     const { email, password } = req.body;
 
     // Fetch user WITH password
-    const user = await User.findOne({ email }).select('+password');
+    const user = await User.findOne({ email: email.toLowerCase() }).select('+password');
     if (!user) {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
@@ -151,6 +180,7 @@ router.post('/login', authLimiter, loginRules, validate, async (req, res) => {
         success: true,
         user: {
           id: user._id,
+          customerId: user.customerId,
           name: user.name,
           email: user.email,
           role: user.role,
@@ -173,7 +203,7 @@ router.post('/admin/login', authLimiter, loginRules, validate, async (req, res) 
   try {
     const { email, password } = req.body;
 
-    const user = await User.findOne({ email, role: 'admin' }).select('+password');
+    const user = await User.findOne({ email: email.toLowerCase(), role: 'admin' }).select('+password');
     if (!user) {
       return res.status(401).json({ success: false, message: 'Admin credentials invalid' });
     }
@@ -242,7 +272,7 @@ router.get('/verify-email/:token', async (req, res) => {
  */
 router.get('/me', verifyToken, async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select('-password');
+    const user = await User.findById(req.user.id).select('-password -emailVerificationToken -emailVerificationExpiry -emailVerificationOTP -emailVerificationOTPExpiry -passwordResetToken -passwordResetExpiry');
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
@@ -291,12 +321,10 @@ router.post('/forgot-password', async (req, res) => {
     user.passwordResetExpiry = Date.now() + 3600000; // 1 hour
     await user.save();
 
-    // Console seed log
-    console.log(`\n🔑 [PASSWORD RESET SEED LOG]`);
-    console.log(`User: ${user.name} (${user.email})`);
-    console.log(`Reset URL: http://localhost:5173/reset-password/${resetToken}\n`);
+    // Send password reset email
+    await sendPasswordResetEmail(user.email, user.name, resetToken);
 
-    res.json({ success: true, message: 'Password reset link generated and printed to console log.' });
+    res.json({ success: true, message: 'Password reset link has been sent to your email.' });
   } catch (err) {
     console.error('Forgot password error:', err);
     res.status(500).json({ success: false, message: 'Server error during forgot password' });
@@ -334,6 +362,52 @@ router.post('/reset-password', async (req, res) => {
   } catch (err) {
     console.error('Reset password error:', err);
     res.status(500).json({ success: false, message: 'Server error during password reset' });
+  }
+});
+
+/**
+ * @route   POST /api/auth/check-email
+ * @desc    Check if email already exists
+ * @access  Public
+ */
+router.post('/check-email', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Email is required' });
+    }
+    const existing = await User.findOne({ email: email.toLowerCase() });
+    if (existing && existing.isEmailVerified) {
+      return res.json({ success: true, exists: true, message: 'Email is already registered' });
+    }
+    return res.json({ success: true, exists: false });
+  } catch (err) {
+    console.error('Check email error:', err);
+    res.status(500).json({ success: false, message: 'Server error checking email' });
+  }
+});
+
+/**
+ * @route   POST /api/auth/check-phone
+ * @desc    Check if phone already exists
+ * @access  Public
+ */
+router.post('/check-phone', async (req, res) => {
+  try {
+    const { phone, email } = req.body;
+    if (!phone) {
+      return res.status(400).json({ success: false, message: 'Phone number is required' });
+    }
+    const existingPhone = await User.findOne({ phone });
+    if (existingPhone) {
+      if (existingPhone.isEmailVerified || (email && existingPhone.email !== email.toLowerCase())) {
+        return res.json({ success: true, exists: true, message: 'Phone number already registered' });
+      }
+    }
+    return res.json({ success: true, exists: false });
+  } catch (err) {
+    console.error('Check phone error:', err);
+    res.status(500).json({ success: false, message: 'Server error checking phone number' });
   }
 });
 

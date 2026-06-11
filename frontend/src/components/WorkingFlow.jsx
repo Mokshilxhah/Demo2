@@ -35,7 +35,7 @@ const steps = [
     num: '03',
     badge: 'Queue Entry',
     title: 'Accept & Get Queued',
-    desc: 'Approve the proposal. Receive WhatsApp + email confirmation with your queue slot.',
+    desc: 'Approve the proposal. Receive email confirmation with your queue slot.',
     accent: '#fbbf24',
     icon: (
       <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
@@ -103,9 +103,8 @@ export default function WorkingFlow() {
         </div>
 
         {/* 5 cards in one row */}
-        <div style={{
+        <div className="flow-grid" style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(5, 1fr)',
           gap: 14,
         }}>
           {steps.map((step, i) => (
@@ -221,18 +220,21 @@ export default function WorkingFlow() {
       </div>
 
       <style>{`
+        .flow-grid {
+          grid-template-columns: repeat(5, 1fr);
+        }
         @media (max-width: 960px) {
-          #flow > .wrap > div:last-child {
+          .flow-grid {
             grid-template-columns: repeat(3, 1fr) !important;
           }
         }
         @media (max-width: 600px) {
-          #flow > .wrap > div:last-child {
+          .flow-grid {
             grid-template-columns: 1fr 1fr !important;
           }
         }
         @media (max-width: 400px) {
-          #flow > .wrap > div:last-child {
+          .flow-grid {
             grid-template-columns: 1fr !important;
           }
         }

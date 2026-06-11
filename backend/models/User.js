@@ -2,6 +2,11 @@ const mongoose = require('mongoose');
 const bcrypt   = require('bcryptjs');
 
 const UserSchema = new mongoose.Schema({
+  customerId: {
+    type: String,
+    unique: true,
+    required: true
+  },
   name: {
     type: String,
     required: [true, 'Please provide a name'],
@@ -49,6 +54,10 @@ const UserSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  occupation: {
+    type: String,
+    default: ''
+  },
   profilePhoto: {
     type: String,
     default: ''
@@ -62,6 +71,28 @@ const UserSchema = new mongoose.Schema({
     default: Date.now
   },
   lastLogin: Date
+});
+
+// Auto-generate unique Customer ID if not present before validation
+UserSchema.pre('validate', async function (next) {
+  if (!this.customerId) {
+    try {
+      let isUnique = false;
+      let customerId = '';
+      while (!isUnique) {
+        const randomNum = Math.floor(10000 + Math.random() * 90000); // 5 digits
+        customerId = `CID-${randomNum}`;
+        const existing = await this.constructor.findOne({ customerId });
+        if (!existing) {
+          isUnique = true;
+        }
+      }
+      this.customerId = customerId;
+    } catch (err) {
+      return next(err);
+    }
+  }
+  next();
 });
 
 // Hash password before saving

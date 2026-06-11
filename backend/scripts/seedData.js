@@ -9,30 +9,9 @@ const Project = require('../models/Project');
 // ==========================================
 const seedAdmins = [
   {
-    name: 'Primary Admin',
-    email: 'admin@devqueue.studio',
-    password: 'SuperSecureAdminPass123!',
-    role: 'admin',
-    isEmailVerified: true
-  },
-  {
-    name: 'Secondary Admin',
-    email: 'admin2@devqueue.studio',
-    password: 'SuperSecureAdminPass123!',
-    role: 'admin',
-    isEmailVerified: true
-  },
-  {
-    name: 'Technical Admin',
-    email: 'admin3@devqueue.studio',
-    password: 'SuperSecureAdminPass123!',
-    role: 'admin',
-    isEmailVerified: true
-  },
-  {
-    name: 'Lead Auditor Admin',
-    email: 'admin4@devqueue.studio',
-    password: 'SuperSecureAdminPass123!',
+    name: 'Reqworks Admin',
+    email: 'Reqworks.tech@gmail.com',
+    password: '@#$Req0046',
     role: 'admin',
     isEmailVerified: true
   }
@@ -41,62 +20,12 @@ const seedAdmins = [
 // ==========================================
 // 👤 EDIT CLIENTS HERE
 // ==========================================
-const seedClients = [
-  {
-    name: 'Aryan Mehta',
-    email: 'user@devqueue.studio',
-    password: 'SuperSecureUserPass123!',
-    role: 'user',
-    isEmailVerified: true,
-    phone: '+91 98765 43210'
-  },
-  {
-    name: 'Moksh Shah',
-    email: 'pending@devqueue.studio',
-    password: 'SuperSecurePendingPass123!',
-    role: 'user',
-    isEmailVerified: false,
-    phone: '+91 99999 88888',
-    emailVerificationOTP: '123456',
-    emailVerificationOTPExpiry: new Date(Date.now() + 24 * 60 * 60 * 1000)
-  }
-];
+const seedClients = [];
 
 // ==========================================
 // 📋 EDIT SEED PROJECTS HERE
 // ==========================================
-const seedProjects = [
-  {
-    projectName: 'EcomX Analytics',
-    clientName: 'Aryan Mehta',
-    stack: 'React + Node.js + PostgreSQL',
-    budget: '$4,200',
-    stage: 'Building',
-    color: '#818cf8',
-    depositPaid: true,
-    finalPaid: false
-  },
-  {
-    projectName: 'Finlytics Pro',
-    clientName: 'Aryan Mehta',
-    stack: 'Next.js + FastAPI + Postgres',
-    budget: '$3,800',
-    stage: 'Submit',
-    color: '#93c5fd',
-    depositPaid: false,
-    finalPaid: false
-  },
-  {
-    projectName: 'MedTrack System',
-    clientName: 'Aryan Mehta',
-    stack: 'Django + Postgres',
-    budget: '$2,500',
-    stage: 'Completed',
-    color: '#6ee7b7',
-    depositPaid: true,
-    finalPaid: true
-  }
-];
+const seedProjects = [];
 
 async function seedDatabase() {
   const uri = process.env.MONGODB_URI;
@@ -111,8 +40,7 @@ async function seedDatabase() {
     console.log('Connected to database. Cleaning old auth and project seeds...');
 
     // Clear old data
-    const allEmails = [...seedAdmins, ...seedClients].map(u => u.email.toLowerCase());
-    await User.deleteMany({ email: { $in: allEmails } });
+    await User.deleteMany({});
     await Project.deleteMany({});
 
     // Create Admins

@@ -45,8 +45,10 @@ export default function VerifyEmailPage() {
         <div className="auth-left-content" style={{ textAlign: 'center' }}>
           {/* Logo brand */}
           <Link to="/" className="auth-brand" style={{ justifyContent: 'center' }}>
-            <div className="auth-brand-logo">BQ</div>
-            <span className="auth-brand-name">BuildQueue</span>
+            <div style={{ width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, padding: '2px', background: '#fff' }}>
+              <img src="/images/logo.png" alt="Reqworks" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+            </div>
+            <span className="auth-brand-name">Reqworks</span>
           </Link>
 
           {status === 'verifying' && (

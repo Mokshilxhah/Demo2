@@ -39,7 +39,7 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div style={{
+    <div className="auth-outer-wrapper" style={{
       minHeight: '100vh',
       display: 'flex',
       alignItems: 'center',
@@ -50,7 +50,7 @@ export default function ForgotPasswordPage() {
       padding: '24px',
     }}>
       {/* Curved wave background */}
-      <div style={{
+      <div className="auth-wave-bg" style={{
         position: 'absolute',
         top: 0, left: 0, right: 0,
         height: '46vh',
@@ -61,7 +61,7 @@ export default function ForgotPasswordPage() {
       }} />
 
       {/* Auth Card Container */}
-      <div style={{
+      <div className="auth-card-container" style={{
         position: 'relative',
         zIndex: 10,
         width: '100%',
@@ -104,17 +104,17 @@ export default function ForgotPasswordPage() {
           Forgot Password
         </h1>
         <p style={{ fontSize: '0.8rem', color: '#94a3b8', lineHeight: 1.5, marginBottom: 28 }}>
-          {sent ? 'Reset link sent!' : 'Enter your email address to retrieve your workspace password.'}
+          {sent ? 'Reset link sent!' : 'Enter your email.'}
         </p>
 
         {!sent ? (
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
             {/* Email input field */}
             <div style={{ marginBottom: 32, textAlign: 'left' }}>
-              <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Your Email</label>
+              <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Email</label>
               <input
                 type="email"
-                placeholder="Your Email"
+                placeholder="Email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 required
@@ -164,17 +164,17 @@ export default function ForgotPasswordPage() {
         ) : (
           <div style={{ animation: 'fade-in 0.3s ease' }}>
             <div style={{
-              background: '#fef3c7',
-              border: '1px solid #fde68a',
+              background: '#ecfdf5',
+              border: '1px solid #a7f3d0',
               borderRadius: 12,
               padding: '16px 14px',
               marginBottom: 32,
-              fontSize: '0.82rem',
-              color: '#d97706',
+              fontSize: '0.85rem',
+              color: '#065f46',
               lineHeight: 1.6,
               textAlign: 'left'
             }}>
-              💡 <strong>Console Log Seeding:</strong> We generated and printed your unique password reset URL to your <strong>backend terminal logs</strong>! Copy and paste it into your browser to set a new password.
+              ✓ <strong>Email Sent:</strong> A password reset link has been successfully sent to your email address. Please check your inbox for instructions to set a new password.
             </div>
           </div>
         )}
@@ -190,6 +190,18 @@ export default function ForgotPasswordPage() {
         @keyframes fade-in {
           from { opacity: 0; transform: translateY(8px); }
           to { opacity: 1; transform: translateY(0); }
+        }
+        @media (max-width: 480px) {
+          .auth-outer-wrapper {
+            padding: 20px !important;
+          }
+          .auth-wave-bg {
+            height: 32vh !important;
+          }
+          .auth-card-container {
+            padding: 28px 20px 36px !important;
+            border-radius: 18px !important;
+          }
         }
       `}</style>
     </div>

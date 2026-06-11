@@ -35,19 +35,21 @@ export default function AdminLoginPage() {
         <div className="auth-left-content">
           {/* Logo brand */}
           <Link to="/" className="auth-brand">
-            <div className="auth-brand-logo" style={{ background: 'var(--a3)', color: '#0d1018' }}>BQ</div>
-            <span className="auth-brand-name">BuildQueue</span>
+            <div style={{ width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, padding: '2px', background: '#fff' }}>
+              <img src="/images/logo.png" alt="Reqworks" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+            </div>
+            <span className="auth-brand-name">Reqworks</span>
           </Link>
 
           <h1>Welcome Admin</h1>
-          <p className="auth-sub">Access the administrative workspace to manage active build pipelines, adjust queues, and verify deliverables.</p>
+          <p className="auth-sub">Access the admin control panel.</p>
 
           <form onSubmit={handleSubmit}>
             <InputField
               label="Email"
               name="email"
               type="email"
-              placeholder="admin@buildqueue.com"
+              placeholder="Email"
               value={form.email}
               onChange={e => setForm({ ...form, email: e.target.value })}
               required
@@ -57,7 +59,7 @@ export default function AdminLoginPage() {
               label="Password"
               name="password"
               type="password"
-              placeholder="••••••••"
+              placeholder="Password"
               value={form.password}
               onChange={e => setForm({ ...form, password: e.target.value })}
               required

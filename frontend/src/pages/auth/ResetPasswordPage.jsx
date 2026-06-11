@@ -51,7 +51,7 @@ export default function ResetPasswordPage() {
   };
 
   return (
-    <div style={{
+    <div className="auth-outer-wrapper" style={{
       minHeight: '100vh',
       display: 'flex',
       alignItems: 'center',
@@ -62,7 +62,7 @@ export default function ResetPasswordPage() {
       padding: '24px',
     }}>
       {/* Curved wave background */}
-      <div style={{
+      <div className="auth-wave-bg" style={{
         position: 'absolute',
         top: 0, left: 0, right: 0,
         height: '46vh',
@@ -73,7 +73,7 @@ export default function ResetPasswordPage() {
       }} />
 
       {/* Auth Card Container */}
-      <div style={{
+      <div className="auth-card-container" style={{
         position: 'relative',
         zIndex: 10,
         width: '100%',
@@ -112,7 +112,7 @@ export default function ResetPasswordPage() {
           Reset Password
         </h1>
         <p style={{ fontSize: '0.8rem', color: '#94a3b8', lineHeight: 1.5, marginBottom: 28 }}>
-          Set a secure new password for your workspace.
+          Set a new password.
         </p>
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
@@ -121,7 +121,7 @@ export default function ResetPasswordPage() {
             <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>New Password</label>
             <input
               type="password"
-              placeholder="New Password (min 8 chars)"
+              placeholder="New password"
               value={password}
               onChange={e => setPassword(e.target.value)}
               required
@@ -147,7 +147,7 @@ export default function ResetPasswordPage() {
             <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Confirm Password</label>
             <input
               type="password"
-              placeholder="Confirm Password"
+              placeholder="Confirm password"
               value={confirmPassword}
               onChange={e => setConfirmPassword(e.target.value)}
               required
@@ -202,6 +202,20 @@ export default function ResetPasswordPage() {
           </Link>
         </div>
       </div>
+      <style>{`
+        @media (max-width: 480px) {
+          .auth-outer-wrapper {
+            padding: 20px !important;
+          }
+          .auth-wave-bg {
+            height: 32vh !important;
+          }
+          .auth-card-container {
+            padding: 28px 20px 36px !important;
+            border-radius: 18px !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }

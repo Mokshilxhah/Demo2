@@ -12,7 +12,8 @@ const ProjectSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: true
+    required: true,
+    index: true
   },
   stack: {
     type: String,
@@ -22,11 +23,51 @@ const ProjectSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  requirements: {
+    type: String,
+    default: ''
+  },
+  needsAi: {
+    type: Boolean,
+    default: false
+  },
+  files: [{
+    filename: String,
+    originalname: String,
+    path: String,
+    size: Number,
+    mimetype: String
+  }],
   stage: {
     type: String,
     required: true,
-    enum: ['Submit', 'Review', 'Planning', 'Building', 'Final Review', 'Completed'],
-    default: 'Submit'
+    enum: ['Submitted', 'Estimated', 'Review', 'Planning', 'Building', 'Testing', 'Final Checks', 'Completed', 'Rejected'],
+    default: 'Submitted'
+  },
+  estimatedPrice: {
+    type: Number,
+    default: 0
+  },
+  whatsLeftNotes: {
+    type: String,
+    default: ''
+  },
+  priceEstimated: {
+    type: Boolean,
+    default: false
+  },
+  userDecision: {
+    type: String,
+    enum: ['None', 'Booked', 'Bargained', 'Deleted'],
+    default: 'None'
+  },
+  bargainPrice: {
+    type: Number,
+    default: 0
+  },
+  bargainMessage: {
+    type: String,
+    default: ''
   },
   depositPaid: {
     type: Boolean,
@@ -36,6 +77,25 @@ const ProjectSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  razorpayOrderId: {
+    type: String,
+    default: ''
+  },
+  razorpayPaymentId: {
+    type: String,
+    default: ''
+  },
+  changeRequests: [{
+    sender: {
+      type: String,
+      enum: ['client', 'admin']
+    },
+    message: String,
+    sentAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
   color: {
     type: String,
     default: 'var(--primary)'

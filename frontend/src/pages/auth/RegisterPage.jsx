@@ -18,23 +18,43 @@ const validatePhone = (phone) => {
 };
 
 export default function RegisterPage() {
-  const [form, setForm] = useState({ name: '', email: '', password: '', phone: '' });
+  const [form, setForm] = useState({ name: '', email: '', password: '', phone: '', occupation: '' });
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
   const [phase, setPhase] = useState(1); // 1: Info, 2: Pass, 3: Contact/OTP
   const [otpSent, setOtpSent] = useState(false);
   const [attemptsLeft, setAttemptsLeft] = useState(3);
+  const [showPassword, setShowPassword] = useState(false);
   
   const { register, setUser, toast } = useAuth();
   const navigate = useNavigate();
 
   // Validate and advance step
-  const handleNextPhase = () => {
+  const handleNextPhase = async () => {
     if (phase === 1) {
-      if (!form.name || !form.email) {
-        toast.error("Please fill in your name and email address.");
+      if (!form.name || !form.email || !form.occupation) {
+        toast.error("Please fill in your name, email, and select your occupation.");
         return;
       }
+      
+      setLoading(true);
+      try {
+        const res = await fetch('/api/auth/check-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: form.email })
+        });
+        const data = await res.json();
+        if (data.success && data.exists) {
+          toast.error("Email is already registered. Please use another email or sign in.");
+          return;
+        }
+      } catch (err) {
+        console.error("Check email failed:", err);
+      } finally {
+        setLoading(false);
+      }
+      
       setPhase(2);
     } else if (phase === 2) {
       const strength = getStrength(form.password);
@@ -60,11 +80,24 @@ export default function RegisterPage() {
 
     setLoading(true);
     try {
+      // Check duplicate phone first
+      const phoneRes = await fetch('/api/auth/check-phone', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: form.phone, email: form.email })
+      });
+      const phoneData = await phoneRes.json();
+      if (phoneData.success && phoneData.exists) {
+        toast.error("Phone number is already registered.");
+        return;
+      }
+
       await register({
         name: form.name,
         email: form.email,
         password: form.password,
-        phone: form.phone
+        phone: form.phone,
+        occupation: form.occupation
       });
       toast.success("Account registered! A 6-digit OTP has been sent to your email.");
       setOtpSent(true);
@@ -123,7 +156,7 @@ export default function RegisterPage() {
   const isPhoneValid = validatePhone(form.phone);
 
   return (
-    <div style={{
+    <div className="auth-outer-wrapper" style={{
       minHeight: '100vh',
       display: 'flex',
       alignItems: 'center',
@@ -134,7 +167,7 @@ export default function RegisterPage() {
       padding: '24px',
     }}>
       {/* Curved wave background */}
-      <div style={{
+      <div className="auth-wave-bg" style={{
         position: 'absolute',
         top: 0, left: 0, right: 0,
         height: '46vh',
@@ -145,7 +178,7 @@ export default function RegisterPage() {
       }} />
 
       {/* Auth Card Container */}
-      <div style={{
+      <div className="auth-card-container" style={{
         position: 'relative',
         zIndex: 10,
         width: '100%',
@@ -198,10 +231,10 @@ export default function RegisterPage() {
         {phase === 1 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
             <div style={{ marginBottom: 24, textAlign: 'left' }}>
-              <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Full Name</label>
+              <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Name</label>
               <input
                 type="text"
-                placeholder="Full Name"
+                placeholder="Name"
                 value={form.name}
                 onChange={e => setForm({ ...form, name: e.target.value })}
                 required
@@ -222,11 +255,11 @@ export default function RegisterPage() {
               />
             </div>
 
-            <div style={{ marginBottom: 32, textAlign: 'left' }}>
-              <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Your Email</label>
+            <div style={{ marginBottom: 24, textAlign: 'left' }}>
+              <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Email</label>
               <input
                 type="email"
-                placeholder="Your Email"
+                placeholder="Email"
                 value={form.email}
                 onChange={e => setForm({ ...form, email: e.target.value })}
                 required
@@ -245,6 +278,37 @@ export default function RegisterPage() {
                 onFocus={e => e.target.style.borderBottomColor = '#f5a623'}
                 onBlur={e => e.target.style.borderBottomColor = '#e2e8f0'}
               />
+            </div>
+
+            <div style={{ marginBottom: 32, textAlign: 'left' }}>
+              <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Occupation / Role</label>
+              <select
+                value={form.occupation}
+                onChange={e => setForm({ ...form, occupation: e.target.value })}
+                required
+                style={{
+                  width: '100%',
+                  border: 'none',
+                  borderBottom: '1px solid #e2e8f0',
+                  padding: '8px 0',
+                  background: 'transparent',
+                  color: form.occupation ? '#1e293b' : '#94a3b8',
+                  fontSize: '0.9rem',
+                  outline: 'none',
+                  marginTop: 4,
+                  boxSizing: 'border-box',
+                  cursor: 'pointer',
+                }}
+                onFocus={e => e.target.style.borderBottomColor = '#f5a623'}
+                onBlur={e => e.target.style.borderBottomColor = '#e2e8f0'}
+              >
+                <option value="" disabled style={{ color: '#94a3b8' }}>Select your role</option>
+                <option value="student" style={{ color: '#1e293b' }}>Student</option>
+                <option value="business_owner" style={{ color: '#1e293b' }}>Business Owner</option>
+                <option value="entrepreneur" style={{ color: '#1e293b' }}>Entrepreneur</option>
+                <option value="freelancer" style={{ color: '#1e293b' }}>Freelancer / Developer</option>
+                <option value="other" style={{ color: '#1e293b' }}>Other</option>
+              </select>
             </div>
 
             <button
@@ -275,28 +339,60 @@ export default function RegisterPage() {
         {phase === 2 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
             <div style={{ marginBottom: 12, textAlign: 'left' }}>
-              <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Choose Password</label>
-              <input
-                type="password"
-                placeholder="Min 8 characters, 1 upper, 1 number"
-                value={form.password}
-                onChange={e => setForm({ ...form, password: e.target.value })}
-                required
-                style={{
-                  width: '100%',
-                  border: 'none',
-                  borderBottom: '1px solid #e2e8f0',
-                  padding: '8px 0',
-                  background: 'transparent',
-                  color: '#1e293b',
-                  fontSize: '0.9rem',
-                  outline: 'none',
-                  marginTop: 4,
-                  boxSizing: 'border-box',
-                }}
-                onFocus={e => e.target.style.borderBottomColor = '#f5a623'}
-                onBlur={e => e.target.style.borderBottomColor = '#e2e8f0'}
-              />
+              <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Password</label>
+              <div style={{ position: 'relative', width: '100%' }}>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Password"
+                  value={form.password}
+                  onChange={e => setForm({ ...form, password: e.target.value })}
+                  required
+                  style={{
+                    width: '100%',
+                    border: 'none',
+                    borderBottom: '1px solid #e2e8f0',
+                    padding: '8px 30px 8px 0',
+                    background: 'transparent',
+                    color: '#1e293b',
+                    fontSize: '0.9rem',
+                    outline: 'none',
+                    marginTop: 4,
+                    boxSizing: 'border-box',
+                  }}
+                  onFocus={e => e.target.style.borderBottomColor = '#f5a623'}
+                  onBlur={e => e.target.style.borderBottomColor = '#e2e8f0'}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{
+                    position: 'absolute',
+                    right: 0,
+                    bottom: 8,
+                    background: 'none',
+                    border: 'none',
+                    color: '#94a3b8',
+                    cursor: 'pointer',
+                    fontSize: '1rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: 0,
+                  }}
+                >
+                  {showPassword ? (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                      <line x1="1" y1="1" x2="23" y2="23" />
+                    </svg>
+                  ) : (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
+                  )}
+                </button>
+              </div>
             </div>
 
             {/* Password strength indicators */}
@@ -367,10 +463,10 @@ export default function RegisterPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
             {/* Phone Number Field */}
             <div style={{ marginBottom: 24, textAlign: 'left' }}>
-              <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Phone Number</label>
+              <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Phone</label>
               <input
                 type="tel"
-                placeholder="+91 98765 43210"
+                placeholder="Phone number"
                 value={form.phone}
                 onChange={e => setForm({ ...form, phone: e.target.value })}
                 disabled={otpSent}
@@ -391,7 +487,7 @@ export default function RegisterPage() {
               />
               {!otpSent && (
                 <div style={{ fontSize: '0.72rem', color: isPhoneValid ? '#10b981' : '#94a3b8', marginTop: 6, textAlign: 'right' }}>
-                  {isPhoneValid ? '✓ Mobile number is valid' : 'Enter a 10 digit mobile number'}
+                  {isPhoneValid ? '✓ Phone is valid' : 'Enter 10-digit number'}
                 </div>
               )}
             </div>
@@ -400,10 +496,10 @@ export default function RegisterPage() {
             {otpSent && (
               <form onSubmit={handleVerifyOtp} style={{ display: 'flex', flexDirection: 'column', gap: 0, animation: 'fade-in 0.3s ease' }}>
                 <div style={{ marginBottom: 20, textAlign: 'left' }}>
-                  <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>6-Digit OTP Code</label>
+                  <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>OTP</label>
                   <input
                     type="text"
-                    placeholder="000000"
+                    placeholder="OTP"
                     maxLength={6}
                     value={otp}
                     onChange={e => setOtp(e.target.value.replace(/\D/g, ''))}
@@ -427,22 +523,7 @@ export default function RegisterPage() {
                     onBlur={e => e.target.style.borderBottomColor = '#e2e8f0'}
                   />
                 </div>
-
-                <div style={{
-                  background: '#fef3c7',
-                  border: '1px solid #fde68a',
-                  borderRadius: 12,
-                  padding: '12px 14px',
-                  marginBottom: 24,
-                  fontSize: '0.78rem',
-                  color: '#d97706',
-                  lineHeight: 1.5,
-                  textAlign: 'left'
-                }}>
-                  💡 <strong>Console Log Seeding:</strong> We printed your OTP code to your <strong>backend terminal logs</strong>! Copy and paste it above to verify instantly.
-                </div>
-
-                <button
+                 <button
                   type="submit"
                   disabled={loading}
                   style={{
@@ -528,6 +609,18 @@ export default function RegisterPage() {
         @keyframes fade-in {
           from { opacity: 0; transform: translateY(8px); }
           to { opacity: 1; transform: translateY(0); }
+        }
+        @media (max-width: 480px) {
+          .auth-outer-wrapper {
+            padding: 20px !important;
+          }
+          .auth-wave-bg {
+            height: 32vh !important;
+          }
+          .auth-card-container {
+            padding: 28px 20px 36px !important;
+            border-radius: 18px !important;
+          }
         }
       `}</style>
     </div>

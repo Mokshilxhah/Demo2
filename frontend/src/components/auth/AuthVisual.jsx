@@ -87,7 +87,7 @@ export default function AuthVisual({ image, isAdmin = false }) {
           display: 'block',
           marginBottom: 8
         }}>
-          {isAdmin ? 'Operations Dashboard' : 'The Build Queue Experience'}
+          {isAdmin ? 'Operations Dashboard' : 'The Reqworks Experience'}
         </span>
         <h2 style={{
           fontFamily: 'var(--fd)',
@@ -158,21 +158,18 @@ export default function AuthVisual({ image, isAdmin = false }) {
           }}>
             {/* Circular Glowing Logo */}
             <div style={{
-              width: '46px',
-              height: '46px',
+              width: '50px',
+              height: '50px',
               borderRadius: '50%',
-              background: 'var(--bg-3)',
+              background: '#fff',
               border: `2px solid ${primaryAccent}`,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontFamily: 'var(--fd)',
-              fontSize: '0.95rem',
-              fontWeight: 800,
-              color: 'var(--t1)',
-              animation: 'logo-pulse 3.5s ease-in-out infinite'
+              animation: 'logo-pulse 3.5s ease-in-out infinite',
+              padding: '3px'
             }}>
-              BQ
+              <img src="/images/logo.png" alt="RW" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
             </div>
 
             {/* Slogan Text */}
@@ -195,7 +192,7 @@ export default function AuthVisual({ image, isAdmin = false }) {
                 textTransform: 'uppercase',
                 letterSpacing: '0.06em'
               }}>
-                BUILDQUEUE PLATFORM
+                REQWORKS PLATFORM
               </p>
             </div>
           </div>

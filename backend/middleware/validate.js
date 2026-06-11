@@ -7,7 +7,7 @@ const registerRules = [
     .withMessage('Name must be at least 2 characters'),
   body('email')
     .isEmail()
-    .normalizeEmail()
+    .normalizeEmail({ gmail_remove_dots: false })
     .withMessage('Please provide a valid email address'),
   body('password')
     .isLength({ min: 8 })
@@ -21,7 +21,7 @@ const registerRules = [
 const loginRules = [
   body('email')
     .isEmail()
-    .normalizeEmail()
+    .normalizeEmail({ gmail_remove_dots: false })
     .withMessage('Please provide a valid email address'),
   body('password')
     .notEmpty()

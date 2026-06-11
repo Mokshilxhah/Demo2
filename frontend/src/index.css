@@ -352,17 +352,11 @@ section { position: relative; overflow: hidden; }
   flex-shrink: 0;
 }
 
-.logo-mark {
-  width: 34px; height: 34px;
-  background: linear-gradient(135deg, var(--a1), var(--a2));
+.logo img {
+  width: 34px;
+  height: 34px;
   border-radius: 9px;
-  display: grid;
-  place-items: center;
-  font-family: var(--fd);
-  font-weight: 800;
-  font-size: 0.78rem;
-  color: #0d1018;
-  letter-spacing: -0.5px;
+  object-fit: cover;
 }
 
 .logo-text {
@@ -1960,8 +1954,11 @@ section { position: relative; overflow: hidden; }
    RESPONSIVE UTILITIES
 ═══════════════════════════════════════════ */
 @media (max-width: 768px) {
-  .wrap { padding: 0 16px; }
+  .wrap { padding: 0 24px; }
   .sec-head { margin-bottom: 48px; }
+}
+@media (max-width: 480px) {
+  .wrap { padding: 0 20px; }
 }
 
 /* Tech Stack legacy */
